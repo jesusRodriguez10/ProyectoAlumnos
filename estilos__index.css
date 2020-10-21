@@ -1,0 +1,71 @@
+body{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+#registro{
+    border: 1px solid black;
+    width: 70%;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 40px;
+}
+.datos{
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+.datos span{
+    margin-left: 20%;
+    margin-right: 5%;
+    font-weight: bold;
+    color: rgb(78, 105, 27);
+}
+.datos input{
+    margin-right: 20%;
+    width: 40%;
+}
+.datos select{
+    margin-right: 20%;
+    width: 40.5%;
+}
+#busqueda{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+#buscarMujeres{
+    margin-right: 5%;
+}
+#tablas{
+    display: flex;
+    flex-direction: row;
+    width: 100vw;
+    justify-content: space-between;
+
+}
+#mujeres, #hombres{
+    border: 1px solid black;
+    width: 45%;
+}
+#mujeres{
+    margin-left: 2%;
+}
+#hombres{
+    margin-right: 2%;
+}
+.tdHeader{
+    font-size: 18px;
+    background-color: rgb(209, 209, 209);
+}
+#botones{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    margin-left: 50%;
+}

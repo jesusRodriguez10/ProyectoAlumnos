@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grupo de alumnos</title>
+    <link rel="stylesheet" href="estilos__index.css">   
+</head>
+<body>
+    <h1>GESTIÓN DE ALUMNOS</h1>
+    <div id="registro">
+        <h3>Datos del alumno a registrar:</h3>
+        <div class="datos">
+            <span>Matricula* </span><input type="text" id="matricula"/>
+        </div>
+        <div class="datos">
+            <span>Nombre* </span><input type="text" id="nombre"/>
+        </div>
+        <div class="datos">
+            <span>Edad* </span><input type="text" id="edad"/>
+        </div>
+        <div class="datos">
+            <span>Sexo* </span><select id="sexo"><option>Masculino</option><option>Femenino</option></select>
+        </div>
+        <div class="datos">
+            <span>Promedio* </span><input type="text" id="promedio"/>
+        </div>
+        <div id="botones">
+            <input type="button" value="Guardar" id="btnGuardar" onclick="guardarRegistro()"/>                
+            <input type="button" value="Cancelar" id="btnCancelar" style="display:none;" onclick="cancelarModificaciones()"/>
+        </div>
+    </div>
+    <div id="busqueda">
+        <div id="buscarMujeres">
+            <span>Matricula <input type="text" id="buscarPorMatriculaM"/></span>
+            <span>Nombre <input type="text" id="buscarPorNombreM"/></span>
+            <button onclick="buscarAlumnos(0)">Buscar</button>
+        </div>
+        <div id="buscarHombres">
+            <span>Matricula <input type="text" id="buscarPorMatriculaH"/></span>
+            <span>Nombre <input type="text" id="buscarPorNombreH"/></span>
+            <button onclick="buscarAlumnos(1)">Buscar</button>
+        </div>
+    </div>
+    <div id="tablas">
+        <table id="mujeres">
+            <tr>
+                <td class="tdHeader" style="color: #F44336">Matricula</td>
+                <td class="tdHeader" style="color: #F44336">Nombre</td>
+                <td class="tdHeader" style="color: #F44336" width="40px">Edad</td>
+                <td class="tdHeader" style="color: #F44336">Sexo</td>            
+                <td class="tdHeader" style="color: #F44336">Promedio</td>               
+                <td class="tdHeader" style="color: #F44336" width="40px">Modificar</td>
+                <td class="tdHeader" style="color: #F44336" width="40px">Eliminar</td>
+            </tr>
+        </table>
+        <table id="hombres">
+            <tr>
+                <td class="tdHeader" style="color: #180dac">Matricula</td>
+                <td class="tdHeader" style="color: #180dac">Nombre</td>
+                <td class="tdHeader" style="color: #180dac" width="40px">Edad</td>
+                <td class="tdHeader" style="color: #180dac">Sexo</td>            
+                <td class="tdHeader" style="color: #180dac">Promedio</td>               
+                <td class="tdHeader" style="color: #180dac" width="40px">Modificar</td>
+                <td class="tdHeader" style="color: #180dac" width="40px">Eliminar</td>
+            </tr>
+        </table>
+    </div>
+</body>
+
+
+
+
+
+<!-- The core Firebase JS SDK is always required and must be listed first -->
+<script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-database.js"></script>
+
+<!-- TODO: Add SDKs for Firebase products that you want to use
+     https://firebase.google.com/docs/web/setup#available-libraries -->
+<script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-analytics.js"></script>
+<script>
+    // Your web app's Firebase configuration
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+    var firebaseConfig = {
+    apiKey: "AIzaSyC7aarJW3dWJ9B3B-aC3VUIKGjx6t29qAs",
+    authDomain: "pruebacrud-c84b9.firebaseapp.com",
+    databaseURL: "https://pruebacrud-c84b9.firebaseio.com",
+    projectId: "pruebacrud-c84b9",
+    storageBucket: "pruebacrud-c84b9.appspot.com",
+    messagingSenderId: "706398421934",
+    appId: "1:706398421934:web:0c54aa129b0eb43d7fbe3f"
+  };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    var alumnosHombres = new Array();
+    var alumnasMujeres = new Array();
+    enlistarAlumnos();
+
+    function enlistarAlumnos(){
+        alumnosHombres = new Array();
+        alumnasMujeres = new Array();
+        consulta = firebase.database().ref('alumnos');
+        consulta.once("value").then(function (snapshot){                 
+            return new Promise(function(resolve, reject) { 
+                snapshot.forEach(function (childSnapshot){  
+                    if(childSnapshot.val().sexo == "Masculino"){  
+                        alumnosHombres.push(childSnapshot.key);
+                        alumnosHombres.push(childSnapshot.val().nombre);
+                        alumnosHombres.push(childSnapshot.val().edad);
+                        alumnosHombres.push(childSnapshot.val().promedio);
+                    }else{
+                        alumnasMujeres.push(childSnapshot.key);
+                        alumnasMujeres.push(childSnapshot.val().nombre);
+                        alumnasMujeres.push(childSnapshot.val().edad);
+                        alumnasMujeres.push(childSnapshot.val().promedio);
+                    }
+                });
+                resolve(agregarTablas()); 
+            });            
+        }, function (errorObject) {
+            alert("Error al conextar con Firebase: Error " + errorObject.code);
+        });
+    }
+
+    function agregarTablas(){
+        tabla = document.getElementById("mujeres");
+        while(tabla.rows.length > 1){
+            tabla.deleteRow(tabla.rows.length-1);
+        }
+        conteoAlumnos = 0;
+        sumaCalificaciones = 0;
+        for(i=0;i<alumnasMujeres.length;i+=4){
+            fila = tabla.insertRow(tabla.rows.length);
+            matricula = fila.insertCell(0);
+            nombre = fila.insertCell(1);
+            edad = fila.insertCell(2);
+            sexo = fila.insertCell(3);
+            promedio = fila.insertCell(4);
+
+            matricula.innerHTML = alumnasMujeres[i];
+            nombre.innerHTML = alumnasMujeres[i+1];
+            edad.innerHTML = alumnasMujeres[i+2];
+            sexo.innerHTML = "Femenino";
+            promedio.innerHTML = alumnasMujeres[i+3];
+            conteoAlumnos++;
+            sumaCalificaciones += parseInt(alumnasMujeres[i+3]);
+            fila.insertCell(5).innerHTML = "<input type='button' value='Modificar' onclick='modificar("+(tabla.rows.length-1)+","+(0)+")'>";
+            fila.insertCell(6).innerHTML = "<input type='button' value='Eliminar' onclick='eliminar("+(tabla.rows.length-1)+","+(0)+")'>";
+        }
+        fila = tabla.insertRow(tabla.rows.length);
+        total = fila.insertCell(0);
+        total.innerHTML = "Total: "+conteoAlumnos;
+        promedioGrupal = fila.insertCell(1);
+        promedioGrupal.innerHTML = "Promedio: "+(sumaCalificaciones/conteoAlumnos);
+
+        conteoAlumnos = 0;
+        sumaCalificaciones = 0;
+        tabla = document.getElementById("hombres");
+        while(tabla.rows.length > 1){
+            tabla.deleteRow(tabla.rows.length-1);
+        }
+        for(i=0;i<alumnosHombres.length;i+=4){
+            fila = tabla.insertRow(tabla.rows.length);
+            matricula = fila.insertCell(0);
+            nombre = fila.insertCell(1);
+            edad = fila.insertCell(2);
+            sexo = fila.insertCell(3);
+            promedio = fila.insertCell(4);
+
+            matricula.innerHTML = alumnosHombres[i];
+            nombre.innerHTML = alumnosHombres[i+1];
+            edad.innerHTML = alumnosHombres[i+2];
+            sexo.innerHTML = "Masculino";
+            promedio.innerHTML = alumnosHombres[i+3];
+            conteoAlumnos++;
+            sumaCalificaciones += parseInt(alumnosHombres[i+3]);
+            fila.insertCell(5).innerHTML = "<input type='button' value='Modificar' onclick='modificar("+(tabla.rows.length-1)+","+(1)+")'>";
+            fila.insertCell(6).innerHTML = "<input type='button' value='Eliminar' onclick='eliminar("+(tabla.rows.length-1)+","+(1)+")'>";
+        }
+        fila = tabla.insertRow(tabla.rows.length);
+        total = fila.insertCell(0);
+        total.innerHTML = "Total: "+conteoAlumnos;
+        promedioGrupal = fila.insertCell(1);
+        promedioGrupal.innerHTML = "Promedio: "+(sumaCalificaciones/conteoAlumnos);
+    }
+
+    function guardarRegistro(){
+        matricula = document.getElementById("matricula").value;
+        nombre = document.getElementById("nombre").value;
+        edad = document.getElementById("edad").value;
+        sexo = document.getElementById("sexo").value;
+        promedio = document.getElementById("promedio").value;
+        if(matricula != "" && nombre != "" && edad != "" && promedio != ""){
+            firebase.database().ref().child("alumnos").child(matricula).set({
+                nombre: nombre,
+                edad: edad,
+                sexo: sexo,
+                promedio: promedio,                
+            });
+            document.getElementById("matricula").value = "";
+            document.getElementById("nombre").value = "";
+            document.getElementById("edad").value = "";
+            document.getElementById("sexo").value = "Masculino";
+            document.getElementById("promedio").value = "";
+            alert("Se han guardado los datos correctamente");
+            enlistarAlumnos()
+        }else{
+            alert("Uno o más datos están vacíos");
+        }
+    }
+
+    function modificar(fila, sexo){
+        var tabla = document.getElementById("hombres");
+        if(sexo == 0){
+            tabla = document.getElementById("mujeres");
+        }
+        document.getElementById("matricula").value = tabla.rows[fila].cells[0].innerHTML;
+        document.getElementById("nombre").value = tabla.rows[fila].cells[1].innerHTML;
+        document.getElementById("edad").value = tabla.rows[fila].cells[2].innerHTML;
+        document.getElementById("sexo").value = tabla.rows[fila].cells[3].innerHTML;
+        document.getElementById("promedio").value = tabla.rows[fila].cells[4].innerHTML;
+        document.getElementById("btnCancelar").style.display = "block";
+        document.getElementById("btnGuardar").setAttribute("onclick","guardarModificaciones("+fila+","+sexo+")");
+    }
+
+    function eliminar(fila, sexo){  
+        var tabla = document.getElementById("hombres");
+        if(sexo == 0){
+            tabla = document.getElementById("mujeres");
+        }      
+        consulta = firebase.database().ref('alumnos/'+tabla.rows[fila].cells[0].innerHTML).remove();
+        document.getElementById("matricula").value = "";
+        document.getElementById("nombre").value = "";
+        document.getElementById("edad").value = "";
+        document.getElementById("sexo").value = "Masculino";
+        document.getElementById("promedio").value = "";
+        alert('Datos eliminados con éxito');
+        enlistarAlumnos()
+        document.getElementById("btnCancelar").style.display = "none";   
+        document.getElementById("btnGuardar").setAttribute("onclick","guardarRegistro()");
+    }
+
+    function cancelarModificaciones(fila){
+        document.getElementById("matricula").value = "";
+        document.getElementById("nombre").value = "";
+        document.getElementById("edad").value = "";
+        document.getElementById("sexo").value = "Masculino";
+        document.getElementById("promedio").value = "";
+        document.getElementById("btnCancelar").style.display = "none";        
+        document.getElementById("btnGuardar").setAttribute("onclick","guardarRegistro()");        
+    }
+
+    function guardarModificaciones(fila,sexo){
+        var tabla = document.getElementById("hombres");
+        if(sexo == 0){
+            tabla = document.getElementById("mujeres");
+        }
+        consulta = firebase.database().ref('alumnos/'+tabla.rows[fila].cells[0].innerHTML).remove();
+        matricula = document.getElementById("matricula").value;
+        nombre = document.getElementById("nombre").value;
+        edad = document.getElementById("edad").value;
+        sexo = document.getElementById("sexo").value;
+        promedio = document.getElementById("promedio").value;
+        if(matricula != "" && nombre != "" && edad != "" && promedio != ""){
+            firebase.database().ref().child("alumnos").child(matricula).set({
+                nombre: nombre,
+                edad: edad,
+                sexo: sexo,
+                promedio: promedio,                
+            });
+            document.getElementById("matricula").value = "";
+            document.getElementById("nombre").value = "";
+            document.getElementById("edad").value = "";
+            document.getElementById("sexo").value = "Masculino";
+            document.getElementById("promedio").value = "";
+            alert('Datos modificados con éxito');
+            enlistarAlumnos()
+            document.getElementById("btnCancelar").style.display = "none";   
+            document.getElementById("btnGuardar").setAttribute("onclick","guardarRegistro()");
+        }else{
+            alert("Uno o más datos están vacíos");
+        }
+    }
+
+   function buscarAlumnos(tipo){
+       matricula = document.getElementById("buscarPorMatriculaH").value;
+       nombre = document.getElementById("buscarPorNombreH").value;
+       valorSexo = "Masculino";
+       var tabla = new Array();
+       if(tipo == 0){
+           valorSexo = "Femenino";
+           matricula = document.getElementById("buscarPorMatriculaM").value;
+            nombre = document.getElementById("buscarPorNombreM").value;
+       }
+        consulta = firebase.database().ref('alumnos');
+       if(matricula != "" && nombre != ""){
+        consulta.once("value").then(function (snapshot){                 
+            return new Promise(function(resolve, reject) { 
+                snapshot.forEach(function (childSnapshot){ 
+                    if(matricula == childSnapshot.key && nombre == childSnapshot.nombre) {
+                        tabla.push(childSnapshot.key);
+                        tabla.push(childSnapshot.val().nombre);
+                        tabla.push(childSnapshot.val().edad);
+                        tabla.push(childSnapshot.val().promedio);
+                    }
+                });
+                resolve(finalizando(tabla, tipo)); 
+            });            
+        }, function (errorObject) {
+            alert("Error al conextar con Firebase: Error " + errorObject.code);
+        });
+       }else if(nombre != ""){
+        consulta.once("value").then(function (snapshot){                 
+            return new Promise(function(resolve, reject) { 
+                snapshot.forEach(function (childSnapshot){ 
+                    if(nombre == childSnapshot.nombre) {
+                        tabla.push(childSnapshot.key);
+                        tabla.push(childSnapshot.val().nombre);
+                        tabla.push(childSnapshot.val().edad);
+                        tabla.push(childSnapshot.val().promedio);
+                    }
+                });
+                resolve(finalizando(tabla, tipo)); 
+            });            
+        }, function (errorObject) {
+            alert("Error al conextar con Firebase: Error " + errorObject.code);
+        });
+       }else if(matricula != ""){
+        consulta.once("value").then(function (snapshot){                 
+            return new Promise(function(resolve, reject) { 
+                snapshot.forEach(function (childSnapshot){ 
+                    if(matricula == childSnapshot.key) {
+                        tabla.push(childSnapshot.key);
+                        tabla.push(childSnapshot.val().nombre);
+                        tabla.push(childSnapshot.val().edad);
+                        tabla.push(childSnapshot.val().promedio);
+                    }
+                });
+                resolve(finalizando(tabla, tipo)); 
+            });            
+        }, function (errorObject) {
+            alert("Error al conextar con Firebase: Error " + errorObject.code);
+        });
+       }else{
+           enlistarAlumnos();
+       }
+   }
+   function finalizando(tabla, tipo) {
+        if(tipo == 0){
+            alumnasMujeres = tabla;
+        }else{
+            alumnosHombres = tabla;
+        }
+        agregarTablas()
+    }
+  </script>
+</html>
